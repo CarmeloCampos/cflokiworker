@@ -1,15 +1,21 @@
 {
-  "name": "cflokiworker",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231218.0",
-    "typescript": "^5.0.4",
-    "wrangler": "^3.0.0"
-  }
+	"name": "cflokiworker",
+	"version": "1.0.0",
+	"private": false,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"cf-typegen": "wrangler types",
+		"build": "tsc",
+		"format": "prettier --write .",
+		"lint": "eslint ."
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.28.0",
+		"eslint": "^9.28.0",
+		"prettier": "^3.5.3",
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.34.0",
+		"wrangler": "^4.20.0"
+	}
 }
