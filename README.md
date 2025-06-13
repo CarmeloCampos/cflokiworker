@@ -1,45 +1,129 @@
 # cflokiworker
 
-`cflokiworker` is a [Cloudflare Tail Worker](https://developers.cloudflare.com/workers/observability/tail-workers/) for pushing logs and unhandled exceptions to [Grafana Loki](https://grafana.com/oss/loki/) from your Cloudflare workers.
+Un [Cloudflare Tail Worker](https://developers.cloudflare.com/workers/observability/tail-workers/) moderno para enviar logs y excepciones no manejadas a [Grafana Loki](https://grafana.com/oss/loki/) desde tus Cloudflare Workers.
 
-The worker is being used on production for collecting logs from [the ScreenshotOne API](https://screenshotone.com/) Gateway which is implemented as a Cloudflare worker.
+## 🚀 Características
 
-## Getting Started
+- **Agregación de logs en tiempo real** desde múltiples Cloudflare Workers
+- **Transformación automática** de eventos de trace a formato Loki
+- **Autenticación segura** con credenciales Base64
+- **Despliegue automatizado** con GitHub Actions
+- **TypeScript completo** con tipos de Cloudflare Workers
+- **Entorno de desarrollo moderno** con Bun y ESLint
 
-### Clone or Fork, and Deploy
+## 📋 Requisitos Previos
 
-You can clone the repository and use it directly for your needs without any modifications.
+- Cuenta de Cloudflare con Workers habilitado
+- Instancia de Grafana Loki accesible
+- Node.js 18+ o Bun (recomendado)
+- Wrangler CLI
 
-```shell
-git clone git@github.com:screenshotone/cflokiworker.git
-npm install
-npm run deploy
+## 🛠️ Instalación y Configuración
+
+### 1. Clonar y Configurar
+
+```bash
+git clone https://github.com/CarmeloCampos/cflokiworker.git
+cd cflokiworker
+bun install
 ```
 
-Or you can fork it, modify, and deploy your version of the worker. If you feel it can be shared with everybody, don't hesitate to contribute back by creating a pull request.
+### 2. Configurar Variables de Entorno
 
-### Attach to Workers
+Crea los siguientes secretos en tu repositorio de GitHub:
 
-Once deployed to Cloudflare, you need to update your `wrangler.toml` for workers you want to stream logs from:
+- `CLOUDFLARE_API_TOKEN`: Token de API de Cloudflare
+- `CLOUDFLARE_ACCOUNT_ID`: ID de tu cuenta de Cloudflare  
+- `LOKI_PUSH_URL`: URL HTTP de tu instancia de Loki
+- `LOKI_CREDENTIALS`: Credenciales codificadas en Base64 (`username:password`)
+
+### 3. Conectar Workers Existentes
+
+Agrega esta configuración al `wrangler.toml` de los workers que quieres monitorear:
 
 ```toml
 tail_consumers = [{ service = "logger" }]
 ```
 
-## GitHub Actions
+Ejemplo en `wrangler.json`
+```json
+"tail_consumers": [{ "service": "logger" }]
+```
 
-When using with GitHub Actions, you need to have 2 secrets available:
+### 4. Desplegar
 
-- `LOKI_PUSH_URL`` is an HTTP URL of the Loki instance.
-- `LOKI_CREDENTIALS` is a base64-encoded username:password for accessing the Loki instance.
+```bash
+bun run deploy
+```
 
-## Resources
+## 🔧 Desarrollo
 
-You can learn more about Cloudflare Tail Workers at:
+### Scripts Disponibles
 
-1. [Cloudflare Tail Workers official documentation](https://developers.cloudflare.com/workers/observability/tail-workers/).
-2. [A guide on pushing logs to Grafana Loki from Cloudflare Workers with Tail Workers](https://scalabledeveloper.com/posts/cloudflare-tail-worker-for-pushing-logs-to-grafana-loki/).
+```bash
+# Instalar dependencias
+bun install
 
-## License
+# Ejecutar linter
+bun run lint
 
-`cflokiworker` is released under [the MIT license](LICENSE).
+# Compilar proyecto
+bun run build
+
+# Desplegar a Cloudflare
+bun run deploy
+
+# Desarrollo local
+bun run dev
+```
+
+### Estructura del Proyecto
+
+```
+cflokiworker/
+├── src/
+│   └── index.ts          # Función principal del tail worker
+├── .github/
+│   └── workflows/
+│       └── deploy.yml    # Pipeline de CI/CD
+├── worker-configuration.d.ts  # Tipos de Cloudflare Workers
+├── wrangler.toml         # Configuración de Wrangler
+├── tsconfig.json         # Configuración de TypeScript
+├── eslint.config.mjs     # Configuración de ESLint
+└── package.json          # Dependencias y scripts
+```
+
+## 📊 Uso en Producción
+
+Este worker está siendo utilizado en producción para recopilar logs del [API Gateway de ScreenshotOne](https://screenshotone.com/), demostrando su confiabilidad para escenarios de agregación de logs a gran escala.
+
+## 🔄 Pipeline de CI/CD
+
+El proyecto incluye un pipeline automatizado que:
+
+1. ✅ Valida la calidad del código con ESLint
+2. 🔨 Compila TypeScript a JavaScript
+3. 🚀 Despliega automáticamente a Cloudflare Workers
+4. 🌍 Distribuye globalmente en la red edge de Cloudflare
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## 📚 Recursos Adicionales
+
+- [Documentación oficial de Cloudflare Tail Workers](https://developers.cloudflare.com/workers/observability/tail-workers/)
+- [Guía de integración con Grafana Loki](https://scalabledeveloper.com/posts/cloudflare-tail-worker-for-pushing-logs-to-grafana-loki/)
+- [Documentación de Grafana Loki](https://grafana.com/docs/loki/)
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la [Licencia MIT](LICENSE).
+
+---
+
+**Nota**: Este worker está optimizado para el runtime de Cloudflare Workers y utiliza las últimas características de TypeScript y herramientas modernas de desarrollo.
