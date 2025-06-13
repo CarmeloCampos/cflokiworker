@@ -4,12 +4,12 @@
     "": {
       "name": "cflokiworker",
       "devDependencies": {
-        "@eslint/js": "^9.28.0",
-        "eslint": "^9.28.0",
-        "prettier": "^3.5.3",
-        "typescript": "^5.8.3",
-        "typescript-eslint": "^8.34.0",
-        "wrangler": "^4.20.0",
+        "@eslint/js": "latest",
+        "eslint": "latest",
+        "prettier": "latest",
+        "typescript": "latest",
+        "typescript-eslint": "latest",
+        "wrangler": "latest",
       },
     },
   },
