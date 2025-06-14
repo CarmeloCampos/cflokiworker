@@ -8,14 +8,17 @@
 		"cf-typegen": "wrangler types",
 		"build": "tsc",
 		"format": "prettier --write .",
-		"lint": "eslint ."
+		"check": "tsc -b",
+    	"lint": "oxlint",
+    	"prepare": "husky"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.28.0",
-		"eslint": "^9.28.0",
+		"@commitlint/cli": "^19.8.1",
+		"@commitlint/config-conventional": "^19.8.1",
+		"husky": "^9.1.7",
+		"oxlint": "^1.1.0",
 		"prettier": "^3.5.3",
 		"typescript": "^5.8.3",
-		"typescript-eslint": "^8.34.0",
 		"wrangler": "^4.20.0"
 	}
 }

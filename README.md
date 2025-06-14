@@ -33,7 +33,7 @@ bun install
 Crea los siguientes secretos en tu repositorio de GitHub:
 
 - `CLOUDFLARE_API_TOKEN`: Token de API de Cloudflare
-- `CLOUDFLARE_ACCOUNT_ID`: ID de tu cuenta de Cloudflare  
+- `CLOUDFLARE_ACCOUNT_ID`: ID de tu cuenta de Cloudflare
 - `LOKI_PUSH_URL`: URL HTTP de tu instancia de Loki
 - `LOKI_CREDENTIALS`: Credenciales codificadas en Base64 (`username:password`)
 
@@ -46,6 +46,7 @@ tail_consumers = [{ service = "logger" }]
 ```
 
 Ejemplo en `wrangler.json`
+
 ```json
 "tail_consumers": [{ "service": "logger" }]
 ```
