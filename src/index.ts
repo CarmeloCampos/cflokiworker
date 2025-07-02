@@ -50,7 +50,7 @@ export default {
 				logsByLevel[log.level] = [];
 			}
 
-			const [logMessage] = log.message;
+			const logMessage = log.message.join(" ").trim();
 			if (logMessage) {
 				logsByLevel[log.level].push([
 					toLogNanoSeconds(log.timestamp),
