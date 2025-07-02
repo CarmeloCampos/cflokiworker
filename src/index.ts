@@ -1,3 +1,5 @@
+import type { TraceItem, Env, LokiStream, LogsByLevel } from "./types";
+
 function toLogNanoSeconds(timestamp: number) {
 	return (timestamp * 1000000).toLocaleString("fullwide", {
 		useGrouping: false,
@@ -24,10 +26,7 @@ export default {
 	},
 
 	transformEvents(events: TraceItem[]) {
-		const streams: {
-			stream: Record<string, string>;
-			values: [string, string][];
-		}[] = [];
+		const streams: LokiStream[] = [];
 		for (const event of events) {
 			this.transformEvent(event).forEach((stream) => streams.push(stream));
 		}
@@ -43,12 +42,9 @@ export default {
 			return [];
 		}
 
-		const streams: {
-			stream: Record<string, string>;
-			values: [string, string][];
-		}[] = [];
+		const streams: LokiStream[] = [];
 
-		const logsByLevel: Record<string, [string, string][]> = {};
+		const logsByLevel: LogsByLevel = {};
 		for (const log of event.logs) {
 			if (!(log.level in logsByLevel)) {
 				logsByLevel[log.level] = [];
