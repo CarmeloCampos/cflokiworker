@@ -6,6 +6,16 @@ function toLogNanoSeconds(timestamp: number) {
 	});
 }
 
+function jsonToString(any: unknown) {
+	if (typeof any === "string") {
+		return any;
+	}
+	if (typeof any === "object" && any !== null) {
+		return JSON.stringify(any);
+	}
+	return String(any);
+}
+
 export default {
 	async tail(events: TraceItem[], env: Env) {
 		const data = this.transformEvents(events);
@@ -50,7 +60,7 @@ export default {
 				logsByLevel[log.level] = [];
 			}
 
-			const logMessage = log.message.join(" ").trim();
+			const logMessage = log.message.map(jsonToString).join(" ").trim();
 			if (logMessage) {
 				logsByLevel[log.level].push([
 					toLogNanoSeconds(log.timestamp),
