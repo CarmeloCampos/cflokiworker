@@ -1,16 +1,32 @@
+export type MaybeNull<T> = T | null;
+
+export type MaybeUndefined<T> = T | undefined;
+
+export type MaybeOptional<T> = MaybeNull<MaybeUndefined<T>>;
+
+export type TraceOutcome = "ok" | "exception" | string;
+
+export type AcceptedTraceOutcome = "ok" | "exception";
+
+export type TraceLogLevel = string;
+
+export type TraceLog = {
+	level: TraceLogLevel;
+	timestamp: number;
+	message: ReadonlyArray<unknown>;
+};
+
+export type TraceException = {
+	name: string;
+	message: string;
+	timestamp: number;
+};
+
 export type TraceItem = {
-	outcome: string;
-	scriptName?: string;
-	logs: {
-		level: string;
-		timestamp: number;
-		message: [string];
-	}[];
-	exceptions: {
-		name: string;
-		message: string;
-		timestamp: number;
-	}[];
+	outcome: TraceOutcome;
+	scriptName?: MaybeNull<string>;
+	logs: ReadonlyArray<TraceLog>;
+	exceptions: ReadonlyArray<TraceException>;
 };
 
 export type Env = {
@@ -18,13 +34,13 @@ export type Env = {
 	LOKI_CREDENTIALS?: string;
 };
 
+export type LokiLogValue = readonly [timestamp: string, message: string];
+
 export type LokiStream = {
 	stream: {
 		level: string;
-		outcome: string;
+		outcome: AcceptedTraceOutcome;
 		app: string;
 	};
-	values: [string, string][];
+	values: ReadonlyArray<LokiLogValue>;
 };
-
-export type LogsByLevel = Record<string, [string, string][]>;
