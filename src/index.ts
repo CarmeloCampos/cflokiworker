@@ -1,103 +1,144 @@
-import type { TraceItem, Env, LokiStream, LogsByLevel } from "./types";
+import type {
+	AcceptedTraceOutcome,
+	Env,
+	LokiLogValue,
+	LokiStream,
+	TraceItem,
+} from "./types";
 
-function toLogNanoSeconds(timestamp: number) {
-	return (timestamp * 1000000).toLocaleString("fullwide", {
-		useGrouping: false,
-	});
+const NANOSECONDS_PER_MILLISECOND = 1_000_000n;
+
+function toLogNanoseconds(timestamp: number): string {
+	const normalizedTimestamp = Number.isInteger(timestamp)
+		? timestamp
+		: Math.trunc(timestamp);
+
+	return (BigInt(normalizedTimestamp) * NANOSECONDS_PER_MILLISECOND).toString();
 }
 
-function jsonToString(any: unknown) {
-	if (typeof any === "string") {
-		return any;
+function jsonToString(value: unknown): string {
+	if (typeof value === "string") {
+		return value;
 	}
-	if (typeof any === "object" && any !== null) {
-		return JSON.stringify(any);
+
+	if (typeof value === "object" && value !== null) {
+		try {
+			return JSON.stringify(value);
+		} catch {
+			return String(value);
+		}
 	}
-	return String(any);
+
+	return String(value);
 }
 
-export default {
-	async tail(events: TraceItem[], env: Env) {
-		const data = this.transformEvents(events);
-		if (data.streams.length == 0) {
+function isAcceptedTraceOutcome(
+	outcome: TraceItem["outcome"],
+): outcome is AcceptedTraceOutcome {
+	return outcome === "ok" || outcome === "exception";
+}
+
+function isNonEmptyScriptName(
+	scriptName: TraceItem["scriptName"],
+): scriptName is string {
+	return typeof scriptName === "string" && scriptName.length > 0;
+}
+
+function transformEvent(event: TraceItem): LokiStream[] {
+	if (
+		!isAcceptedTraceOutcome(event.outcome) ||
+		!isNonEmptyScriptName(event.scriptName)
+	) {
+		return [];
+	}
+
+	const streams: LokiStream[] = [];
+	const logsByLevel = new Map<string, LokiLogValue[]>();
+
+	for (const log of event.logs) {
+		if (log.level === "debug") {
+			continue;
+		}
+
+		const logMessage = log.message.map(jsonToString).join(" ").trim();
+		if (!logMessage) {
+			continue;
+		}
+
+		const logs = logsByLevel.get(log.level) ?? [];
+		logs.push([toLogNanoseconds(log.timestamp), logMessage]);
+		logsByLevel.set(log.level, logs);
+	}
+
+	for (const [level, logs] of logsByLevel.entries()) {
+		streams.push({
+			stream: {
+				level,
+				outcome: event.outcome,
+				app: event.scriptName,
+			},
+			values: logs,
+		});
+	}
+
+	if (event.exceptions.length) {
+		streams.push({
+			stream: {
+				level: "error",
+				outcome: event.outcome,
+				app: event.scriptName,
+			},
+			values: event.exceptions.map((exception) => [
+				toLogNanoseconds(exception.timestamp),
+				`${exception.name}: ${exception.message}`,
+			]),
+		});
+	}
+
+	return streams;
+}
+
+function transformEvents(events: ReadonlyArray<TraceItem>): {
+	streams: LokiStream[];
+} {
+	return { streams: events.flatMap(transformEvent) };
+}
+
+const handler: ExportedHandler<Env> = {
+	async tail(events, env) {
+		if (!env.LOKI_PUSH_URL) {
+			console.error("LOKI_PUSH_URL is missing");
 			return;
 		}
 
-		await fetch(env.LOKI_PUSH_URL, {
-			method: "POST",
-			headers: {
-				...(env.LOKI_CREDENTIALS
-					? { authorization: `Basic ${env.LOKI_CREDENTIALS}` }
-					: {}),
-				"content-type": "application/json",
-			},
-			body: JSON.stringify(data),
-		});
-	},
-
-	transformEvents(events: TraceItem[]) {
-		const streams: LokiStream[] = [];
-		for (const event of events) {
-			this.transformEvent(event).forEach((stream) => streams.push(stream));
+		const data = transformEvents(events);
+		if (data.streams.length === 0) {
+			return;
 		}
 
-		return { streams };
-	},
-
-	transformEvent(event: TraceItem) {
-		if (
-			!(event.outcome == "ok" || event.outcome == "exception") ||
-			!event.scriptName
-		) {
-			return [];
-		}
-
-		const streams: LokiStream[] = [];
-
-		const logsByLevel: LogsByLevel = {};
-		for (const log of event.logs) {
-			if (!(log.level in logsByLevel)) {
-				logsByLevel[log.level] = [];
-			}
-
-			const logMessage = log.message.map(jsonToString).join(" ").trim();
-			if (logMessage) {
-				logsByLevel[log.level].push([
-					toLogNanoSeconds(log.timestamp),
-					logMessage,
-				]);
-			}
-		}
-
-		for (const [level, logs] of Object.entries(logsByLevel)) {
-			if (level == "debug") {
-				continue;
-			}
-
-			streams.push({
-				stream: {
-					level,
-					outcome: event.outcome,
-					app: event.scriptName,
+		try {
+			const response = await fetch(env.LOKI_PUSH_URL, {
+				method: "POST",
+				headers: {
+					...(env.LOKI_CREDENTIALS
+						? { authorization: `Basic ${env.LOKI_CREDENTIALS}` }
+						: {}),
+					"content-type": "application/json",
 				},
-				values: logs,
+				body: JSON.stringify(data),
 			});
-		}
 
-		if (event.exceptions.length) {
-			streams.push({
-				stream: {
-					level: "error",
-					outcome: event.outcome,
-					app: event.scriptName,
-				},
-				values: event.exceptions.map((e) => [
-					toLogNanoSeconds(e.timestamp),
-					`${e.name}: ${e.message}`,
-				]),
-			});
+			if (!response.ok) {
+				const responseBody = await response.text();
+				console.error(
+					`Failed to push logs to Loki: ${response.status} ${response.statusText}`,
+					responseBody,
+				);
+			}
+		} catch (error) {
+			console.error("Failed to push logs to Loki", error);
 		}
-
-		return streams;
 	},
 };
+
+export default handler;
